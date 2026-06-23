@@ -3019,7 +3019,7 @@ function calculateWeeklyVolume() {
     if (!wd) return;
     wd.ex.forEach((ex, ei) => {
       // Find actual exercise name (taking swaps into account)
-      const actualName = s.swaps[ei] || ex.n;
+      const actualName = (s.swaps && s.swaps[ei]) ? s.swaps[ei] : ex.n;
       const mapping = MUSCLE_MAPPING[actualName] || MUSCLE_MAPPING[ex.n] || {};
       
       const sets = s.sets[ei] || [];
@@ -4689,7 +4689,7 @@ function copyLog(wk) {
   }
   
   rawWd.ex.forEach((ex, i) => {
-    const displayName = sess.swaps[i] || ex.n;
+    const displayName = (sess && sess.swaps && sess.swaps[i]) ? sess.swaps[i] : ex.n;
     txt += `\n${i+1}. ${displayName}\n`;
     for (let s = 0; s < ex.s; s++) {
       const lg = logs[wk][i]?.[s];
