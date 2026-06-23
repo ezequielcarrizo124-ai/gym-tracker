@@ -1,0 +1,18 @@
+{
+  "name": "Training Emilia",
+  "short_name": "Emilia Gym",
+  "description": "Recomposición corporal y fuerza · Emilia",
+  "start_url": "./index.html?p=emilia",
+  "display": "standalone",
+  "background_color": "#09090f",
+  "theme_color": "#09090f",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "./icon_emilia.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "name": "PPL 7 Días — Tato",
+  "short_name": "PPL · Tato",
+  "description": "Programa de entrenamiento híbrido · Tato",
+  "start_url": "./index.html?p=tato",
+  "display": "standalone",
+  "background_color": "#0c0c0c",
+  "theme_color": "#0c0c0c",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "./icon_tato.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
