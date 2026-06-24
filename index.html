@@ -2462,19 +2462,54 @@ let STORE = {
 function loadStore() {
   try {
     const d = localStorage.getItem(STORE_KEY);
+    const defaultStore = {
+      activeProfile: null,
+      profiles: {
+        tato: { sessions: {}, metrics: [], guardia: false, cycles: [] },
+        emilia: { sessions: {}, metrics: [], guardia: false, cycles: [] }
+      }
+    };
     if (d) {
       const parsed = JSON.parse(d);
-      // Migrate older models if necessary
-      STORE = Object.assign({
-        activeProfile: null,
-        profiles: {
-          tato: { sessions: {}, metrics: [], guardia: false, cycles: [] },
-          emilia: { sessions: {}, metrics: [], guardia: false, cycles: [] }
+      const isOldFormat = parsed.sessions || parsed.metrics || typeof parsed.guardia === 'boolean';
+      if (isOldFormat) {
+        console.log("Migrando formato antiguo de Tato a multiperfil...");
+        defaultStore.profiles.tato.sessions = parsed.sessions || {};
+        defaultStore.profiles.tato.metrics = parsed.metrics || [];
+        defaultStore.profiles.tato.guardia = !!parsed.guardia;
+        defaultStore.profiles.tato.cycles = parsed.cycles || [];
+        defaultStore.activeProfile = parsed.activeProfile || 'tato';
+      } else {
+        if (parsed.activeProfile) {
+          defaultStore.activeProfile = parsed.activeProfile;
         }
-      }, parsed);
+        if (parsed.profiles) {
+          ['tato', 'emilia'].forEach(pKey => {
+            if (parsed.profiles[pKey]) {
+              defaultStore.profiles[pKey] = {
+                sessions: parsed.profiles[pKey].sessions || {},
+                metrics: parsed.profiles[pKey].metrics || [],
+                guardia: !!parsed.profiles[pKey].guardia,
+                cycles: parsed.profiles[pKey].cycles || []
+              };
+            }
+          });
+        }
+      }
+      STORE = defaultStore;
+      saveStore();
+    } else {
+      STORE = defaultStore;
     }
   } catch (e) {
-    console.error("Error al cargar localStorage", e);
+    console.error("Error al cargar y migrar localStorage", e);
+    STORE = {
+      activeProfile: null,
+      profiles: {
+        tato: { sessions: {}, metrics: [], guardia: false, cycles: [] },
+        emilia: { sessions: {}, metrics: [], guardia: false, cycles: [] }
+      }
+    };
   }
 }
 
@@ -3022,7 +3057,7 @@ function calculateWeeklyVolume() {
       const actualName = (s.swaps && s.swaps[ei]) ? s.swaps[ei] : ex.n;
       const mapping = MUSCLE_MAPPING[actualName] || MUSCLE_MAPPING[ex.n] || {};
       
-      const sets = s.sets[ei] || [];
+      const sets = (s.sets && s.sets[ei]) || [];
       sets.forEach(set => {
         if (set && set.done) {
           Object.entries(mapping).forEach(([muscle, coeff]) => {
@@ -3291,7 +3326,7 @@ function checkLastTrainingPerformance(exName) {
   
   if (exIndex === -1) return false;
   
-  const setsData = lastSess.sets[exIndex] || [];
+  const setsData = (lastSess.sets && lastSess.sets[exIndex]) || [];
   const requiredSetsCount = rawWd[targetWk].ex[exIndex].s;
   
   if (setsData.length < requiredSetsCount) return false;
@@ -3402,7 +3437,7 @@ function checkPlateauPerformance(wk, ei, requiredSets) {
   let failedSessCount = 0;
   for (let i = 0; i < 2; i++) {
     const s = sessions[i];
-    const sets = s.sets[ei] || [];
+    const sets = (s.sets && s.sets[ei]) || [];
     let completedSetsCount = 0;
     sets.forEach(set => { if (set && set.done) completedSetsCount++; });
     if (completedSetsCount < requiredSets) {
@@ -3534,7 +3569,7 @@ function renderW(wk, wd) {
       // Find previous value for this set
       let prevKg = '';
       let prevRp = '';
-      if (lastSession && lastSession.sets[i] && lastSession.sets[i][s]) {
+      if (lastSession && lastSession.sets && lastSession.sets[i] && lastSession.sets[i][s]) {
         prevKg = lastSession.sets[i][s].kg || '';
         prevRp = lastSession.sets[i][s].rp || '';
       }
@@ -3655,6 +3690,7 @@ function logS(wk, ei, si) {
   // Save to STORE
   const sess = getSession(wk);
   if (sess) {
+    if (!sess.sets) sess.sets = {};
     if (!sess.sets[ei]) sess.sets[ei] = [];
     if (!sess.sets[ei][si]) sess.sets[ei][si] = {};
     sess.sets[ei][si].kg = kgVal;
@@ -3703,6 +3739,7 @@ function toggleSet(exId, si, wk, ei, restSec) {
   // Mirror to store
   const sess = getSession(wk);
   if (sess) {
+    if (!sess.sets) sess.sets = {};
     if (!sess.sets[ei]) sess.sets[ei] = [];
     if (!sess.sets[ei][si]) sess.sets[ei][si] = {};
     sess.sets[ei][si].done = isDone;
@@ -3714,11 +3751,12 @@ function toggleSet(exId, si, wk, ei, restSec) {
 
 function loadSessionIntoUI(wk) {
   const sess = getSession(wk);
+  if (!sess) return;
   const rawWd = STORE.activeProfile === 'tato' ? WD_TATO[wk] : WD_EMILIA[wk];
   
   // Update header session label
   const lbl = document.getElementById('session-date-lbl-' + wk);
-  if (lbl) lbl.textContent = formatDateES(sess.date);
+  if (lbl && sess.date) lbl.textContent = formatDateES(sess.date);
   
   // Render structure
   renderW(wk, rawWd);
@@ -3726,7 +3764,7 @@ function loadSessionIntoUI(wk) {
   initTransientState(wk);
   
   rawWd.ex.forEach((ex, ei) => {
-    const setsData = sess.sets[ei] || [];
+    const setsData = (sess.sets && sess.sets[ei]) || [];
     for (let si = 0; si < ex.s; si++) {
       const sd = setsData[si] || {};
       const id = wk + '-' + ei;
@@ -4451,7 +4489,7 @@ function renderHistoryList() {
     
     let totalSets = 0, doneSets = 0;
     wd.ex.forEach((ex, ei) => {
-      const setsData = s.sets[ei] || [];
+      const setsData = (s.sets && s.sets[ei]) || [];
       for (let si = 0; si < ex.s; si++) {
         totalSets++;
         if (setsData[si]?.done) doneSets++;
@@ -4463,7 +4501,7 @@ function renderHistoryList() {
     const label = p === 'emilia' ? { glut: 'GLÚT A', quad: 'CUÁD B', upper: 'UPPER' }[s.wk] || s.wk.toUpperCase() : s.wk.toUpperCase();
     
     const exRows = wd.ex.map((ex, ei) => {
-      const setsData = s.sets[ei] || [];
+      const setsData = (s.sets && s.sets[ei]) || [];
       const actualName = s.swaps && s.swaps[ei] ? s.swaps[ei] : ex.n;
       const hasData = setsData.some(sd => sd && (sd.kg || sd.done));
       if (!hasData) return '';
@@ -4647,7 +4685,7 @@ function exportHistoryText() {
       txt += '\n';
     }
     wd.ex.forEach((ex, ei) => {
-      const setsData = s.sets[ei] || [];
+      const setsData = (s.sets && s.sets[ei]) || [];
       const actualName = s.swaps && s.swaps[ei] ? s.swaps[ei] : ex.n;
       const hasData = setsData.some(sd => sd && (sd.kg || sd.done));
       if (!hasData) return;
