@@ -567,6 +567,36 @@ button {
   color: var(--accent);
 }
 
+.coach-chat-msg-user {
+  align-self: flex-end;
+  background: rgba(var(--accent-rgb), 0.15);
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: 12px 12px 0 12px;
+  max-width: 85%;
+  word-break: break-word;
+}
+
+.coach-chat-msg-ai {
+  align-self: flex-start;
+  background: var(--card2);
+  color: var(--text2);
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  border-radius: 12px 12px 12px 0;
+  max-width: 85%;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+.coach-chat-messages::-webkit-scrollbar {
+  width: 4px;
+}
+.coach-chat-messages::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
 /* ═══════════════════════════════════════════════════
    EXERCISE CARD + ALTERNATIVES
 ═══════════════════════════════════════════════════ */
@@ -2714,6 +2744,7 @@ function showTab(name) {
       saveStore();
     }
     updateAICoach(name);
+    restoreChatHistory(name);
   }
   
   if (name === 'semana') renderSemanaTab();
@@ -2810,13 +2841,33 @@ function renderWorkoutTab(wk, container) {
     
     <!-- Coach IA Panel -->
     <div class="coach-panel" id="coach-ia-${wk}">
-      <div class="coach-hdr">
-        <span class="coach-icon">🤖</span>
-        <span class="coach-title">COACH IA VIRTUAL</span>
-        <span class="coach-badge" id="coach-status-${wk}">Preparando</span>
+      <div class="coach-hdr" onclick="toggleCoachCollapse('${wk}')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center">
+        <div style="display:flex; align-items:center; gap:8px">
+          <span class="coach-icon">🤖</span>
+          <span class="coach-title">COACH IA CIENTÍFICO</span>
+          <span class="coach-badge" id="coach-status-${wk}">Preparando</span>
+        </div>
+        <span id="coach-arrow-${wk}" style="font-size:12px; color:var(--text3)">▲</span>
       </div>
-      <div class="coach-body" id="coach-text-${wk}">
-        Cargando análisis kinesiologico e indicaciones del entrenamiento...
+      
+      <div id="coach-content-${wk}">
+        <div class="coach-body" id="coach-text-${wk}" style="border-bottom:1px solid var(--border); padding-bottom:10px">
+          Cargando análisis kinesiologico e indicaciones del entrenamiento...
+        </div>
+        
+        <!-- Chat interactivo -->
+        <div class="coach-chat-wrap" style="padding:10px 0 0 0">
+          <div style="font-size:11px; font-weight:600; color:var(--accent); margin-bottom:8px; display:flex; align-items:center; gap:4px">
+            <span>💬</span> CHAT CIENTÍFICO INTERACTIVO
+          </div>
+          <div class="coach-chat-messages" id="chat-messages-${wk}" style="max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; margin-bottom:10px; padding-right:4px; font-size:11px">
+            <div style="color:var(--text3); font-style:italic; text-align:center; padding:10px 0">El chat mantiene el contexto de tu rutina de hoy, check-in e historial. Pregúntame lo que quieras.</div>
+          </div>
+          <div style="display:flex; gap:6px">
+            <input type="text" class="coach-chat-inp" id="chat-input-${wk}" placeholder="Pregunta sobre cargas, variantes, dolor..." style="flex:1; padding:8px 10px; background:var(--bg); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:11px" onkeydown="if(event.key==='Enter') sendChatMessage('${wk}')">
+            <button class="ex-swap-btn" style="margin:0; border-color:var(--accent); color:var(--accent); font-size:11px; padding:0 12px" onclick="sendChatMessage('${wk}')">Enviar</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -3025,6 +3076,22 @@ function renderSemanaTab() {
       <div class="rule-body">Guardia de 24h o post-guardia: <span class="cr">no entrenás</span>. Usá el botón GUARDIA en el header. No intentés recuperar entrenamientos doblando al día siguiente.</div>
     </div>
 
+    <!-- Gemini API Settings -->
+    <div class="settings-card" style="border-color:rgba(168,85,247,.25)">
+      <div class="settings-title" style="color:var(--purple)">🤖 COACH IA INTERACTIVO (GEMINI)</div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:8px">Conecta tu cuenta de Gemini para tener un chat interactivo fundamentado en la ciencia de tu entrenamiento.</div>
+      <div class="settings-row" style="flex-direction:column; align-items:stretch; gap:6px">
+        <label style="font-size:10px; color:var(--text3)">API Key de Google AI Studio:</label>
+        <div style="display:flex; gap:8px">
+          <input type="password" id="gemini-api-key" placeholder="Pega tu API Key aquí..." style="flex:1; padding:8px 10px; background:var(--bg); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:12px; font-family:var(--mono)" oninput="saveApiKey(this.value)">
+          <button class="rest-btn" style="margin:0; padding:0 12px; border-color:var(--border2); color:var(--text)" onclick="toggleApiKeyVisibility()">👁️</button>
+        </div>
+        <div style="font-size:10px; color:var(--text3); margin-top:2px">
+          ¿No tienes una? Consíguela gratis en <a href="https://aistudio.google.com/" target="_blank" style="color:var(--accent); text-decoration:underline">Google AI Studio ↗</a>.
+        </div>
+      </div>
+    </div>
+
     <!-- Switch Profile/Database Backup Settings -->
     <div class="settings-card">
       <div class="settings-title">⚙️ CONFIGURACIÓN & PERFIL</div>
@@ -3038,6 +3105,12 @@ function renderSemanaTab() {
       </div>
     </div>
   `;
+
+  // Pre-fill API Key input if saved
+  const apiKeyInp = document.getElementById('gemini-api-key');
+  if (apiKeyInp) {
+    apiKeyInp.value = localStorage.getItem('gemini_api_key') || '';
+  }
   
   markTodayBlock();
 }
@@ -4849,6 +4922,238 @@ function toast(msg, type) {
   t.className = 'toast' + (type ? ' ' + type : '');
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ============================================================
+   GEMINI API & INTERACTIVE COACH CHAT
+============================================================ */
+let chatConversations = {}; // wk -> array of { role: 'user'|'model', text: string }
+let coachCollapsed = {}; // wk -> boolean
+
+function saveApiKey(key) {
+  try {
+    localStorage.setItem('gemini_api_key', key.trim());
+  } catch (e) {
+    console.error("Error al guardar la API Key", e);
+  }
+}
+
+function toggleApiKeyVisibility() {
+  const el = document.getElementById('gemini-api-key');
+  if (el) {
+    el.type = el.type === 'password' ? 'text' : 'password';
+  }
+}
+
+function toggleCoachCollapse(wk) {
+  const content = document.getElementById('coach-content-' + wk);
+  const arrow = document.getElementById('coach-arrow-' + wk);
+  if (!content || !arrow) return;
+  
+  const isHidden = content.style.display === 'none';
+  content.style.display = isHidden ? 'block' : 'none';
+  arrow.textContent = isHidden ? '▲' : '▼';
+  coachCollapsed[wk] = !isHidden;
+}
+
+function restoreChatHistory(wk) {
+  const messagesEl = document.getElementById('chat-messages-' + wk);
+  if (!messagesEl) return;
+  
+  if (chatConversations[wk] && chatConversations[wk].length > 0) {
+    messagesEl.innerHTML = '';
+    chatConversations[wk].forEach(msg => {
+      appendChatMsg(messagesEl, msg.text, msg.role === 'user' ? 'user' : 'ai');
+    });
+  }
+  
+  if (coachCollapsed[wk]) {
+    const content = document.getElementById('coach-content-' + wk);
+    const arrow = document.getElementById('coach-arrow-' + wk);
+    if (content && arrow) {
+      content.style.display = 'none';
+      arrow.textContent = '▼';
+    }
+  }
+}
+
+async function sendChatMessage(wk) {
+  const apiKey = localStorage.getItem('gemini_api_key');
+  const inputEl = document.getElementById('chat-input-' + wk);
+  const messagesEl = document.getElementById('chat-messages-' + wk);
+  
+  if (!inputEl || !messagesEl) return;
+  const userText = inputEl.value.trim();
+  if (!userText) return;
+  
+  if (!apiKey) {
+    alert("⚠️ Configura primero tu API Key de Gemini en la pestaña Semana (abajo en Configuración) para usar el Chat Científico.");
+    return;
+  }
+  
+  inputEl.value = '';
+  
+  appendChatMsg(messagesEl, userText, 'user');
+  
+  const loadingId = 'loading-' + Date.now();
+  const loadingEl = document.createElement('div');
+  loadingEl.id = loadingId;
+  loadingEl.className = 'coach-chat-msg-ai';
+  loadingEl.style.fontStyle = 'italic';
+  loadingEl.textContent = 'Analizando biomecánica y redactando respuesta... 🤖';
+  messagesEl.appendChild(loadingEl);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  
+  try {
+    if (!chatConversations[wk]) {
+      chatConversations[wk] = [];
+    }
+    
+    const systemPrompt = compileSystemPrompt(wk);
+    const contents = [];
+    
+    chatConversations[wk].forEach(msg => {
+      contents.push({
+        role: msg.role === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.text }]
+      });
+    });
+    
+    contents.push({
+      role: 'user',
+      parts: [{ text: userText }]
+    });
+    
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        contents: contents,
+        systemInstruction: {
+          parts: [{ text: systemPrompt }]
+        },
+        generationConfig: {
+          temperature: 0.5,
+          maxOutputTokens: 500
+        }
+      })
+    });
+    
+    const loadItem = document.getElementById(loadingId);
+    if (loadItem) loadItem.remove();
+    
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      const errMsg = errData.error?.message || `Error HTTP ${response.status}`;
+      throw new Error(errMsg);
+    }
+    
+    const data = await response.json();
+    const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No obtuve una respuesta válida del Coach IA.";
+    
+    chatConversations[wk].push({ role: 'user', text: userText });
+    chatConversations[wk].push({ role: 'model', text: aiText });
+    
+    appendChatMsg(messagesEl, aiText, 'ai');
+    
+  } catch (err) {
+    console.error("Error en Gemini API:", err);
+    const loadItem = document.getElementById(loadingId);
+    if (loadItem) loadItem.remove();
+    
+    appendChatMsg(messagesEl, `❌ Error del Coach IA: ${err.message}. Verifica tu API Key en la pestaña Semana o tu conexión a internet.`, 'ai');
+  }
+}
+
+function appendChatMsg(container, text, sender) {
+  const msgEl = document.createElement('div');
+  msgEl.className = sender === 'user' ? 'coach-chat-msg-user' : 'coach-chat-msg-ai';
+  
+  let html = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+    .replace(/\*(.*?)\*/g, '<i>$1</i>')
+    .replace(/\n/g, '<br>');
+    
+  msgEl.innerHTML = html;
+  container.appendChild(msgEl);
+  container.scrollTop = container.scrollHeight;
+}
+
+function compileSystemPrompt(wk) {
+  const p = STORE.activeProfile;
+  const prof = getProfileData();
+  const rawWd = p === 'tato' ? WD_TATO[wk] : WD_EMILIA[wk];
+  
+  let prompt = `Eres el COACH IA CIENTÍFICO Y VIRTUAL de una aplicación de entrenamiento.
+Actúas como un kinesiólogo clínico y un entrenador de fuerza de élite con enfoque 100% basado en evidencia científica.
+Tu usuario activo es: ${p.toUpperCase()}.
+
+---
+DIRECTRICES GENERALES DE TU FILOSOFÍA CIENTÍFICA:
+1. Priorizamos la hipertrofia mediada por estiramiento (elongación muscular). Los estudios científicos más recientes demuestran que trabajar los músculos bajo alto estiramiento (ej: Hip Thrust con pausa abajo, sentadilla profunda, curls de bíceps a 45 grados, RDL, el volumen excéntrico lento) produce doble hipertrofia en comparación con el rango acortado.
+2. Autorregulación en base a fatiga (Check-in diario). Si el sueño es escaso, el estrés alto o la energía baja, se sugiere reducir cargas o volumen un 10-15% para evitar sobreentrenamiento del SNC y lesiones.
+3. Kinesiología y Salud articular:
+   - Para EMILIA: Es obligatorio proteger la columna cervical. Cero antepulsión cervical (sacar el cuello) bajo carga axial o tracciones. Mantener doble mentón. Reducir o modificar si hay tensión alta.
+   - Para TATO: Tolerancia al volumen alto de 7 días. El domingo de Zona 2 es clave como recuperación activa para barrer metabolitos y perfusión capilar. El sábado es puro aislado (sin demanda del SNC) para permitir supercompensación.
+
+---
+DATOS DEL ENTRENAMIENTO DE HOY PARA ${p.toUpperCase()}:
+* Rutina: ${wk.toUpperCase()}
+* Ejercicios planificados hoy:
+${rawWd.ex.map((ex, i) => {
+  const targetKg = ex.kg || 'Peso Corporal';
+  return `- ${ex.n}: ${ex.s} series x ${ex.t} reps. Objetivo: ${targetKg} kg. Indicación: ${ex.note || 'Sin nota'}`;
+}).join('\n')}
+
+---
+ESTADO FÍSICO DE HOY (CHECK-IN DEL USUARIO):`;
+
+  const sess = getSession(wk);
+  if (sess && sess.checkin) {
+    const ci = sess.checkin;
+    prompt += `
+- Energía: ${ci.energy}/10
+- Calidad de Sueño: ${ci.sleep}/10
+- Nivel de Estrés: ${ci.stress}/10
+${ci.cerv !== undefined ? `- Tensión Cervical: ${ci.cerv}/10 (Alerta si >= 7)` : ''}`;
+  } else {
+    prompt += `
+- El usuario aún no ha realizado su Check-in diario de hoy. Sugiérele amablemente que lo haga para autorregular mejor.`;
+  }
+
+  const lastSession = getLastSession(wk, todayStr());
+  if (lastSession) {
+    prompt += `
+
+---
+HISTORIAL DE LA SESIÓN ANTERIOR (LOG REAL):
+`;
+    rawWd.ex.forEach((ex, i) => {
+      const setsData = (lastSession.sets && lastSession.sets[i]) || [];
+      const actualName = (lastSession.swaps && lastSession.swaps[i]) ? lastSession.swaps[i] : ex.n;
+      prompt += `- ${actualName}:\n`;
+      for (let s = 0; s < ex.s; s++) {
+        const sd = setsData[s] || {};
+        prompt += `  Set ${s+1}: ${sd.kg ? sd.kg + 'kg' : '—'} x ${sd.rp ? sd.rp + 'r' : '—'} ${sd.done ? '✓' : '○'}\n`;
+      }
+    });
+  }
+
+  prompt += `
+
+---
+INSTRUCCIONES DE RESPUESTA:
+1. Responde de forma muy concisa, clara y directa. Máximo 2 párrafos o 3 bullets breves por respuesta. Los entrenadores no leen textos gigantes en el gimnasio.
+2. Si te preguntan por alternativas de ejercicio, justifícalas biomecánicamente en base a la base de datos de la app.
+3. Si el usuario reporta dolor (ej: cervical en Emilia, lumbar en RDL, hombro en banca), dale una pauta kinesiologica de seguridad de inmediato: bajar la carga, corregir postura (cuello neutro o retracción escapular) o sugerir cambiar el ejercicio por su alternativa biomecánica de la app.
+4. Fundamenta siempre con tono profesional pero cercano y motivador. No uses introducciones repetitivas.`;
+
+  return prompt;
 }
 
 function init() {
