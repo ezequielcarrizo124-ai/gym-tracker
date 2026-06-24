@@ -3301,6 +3301,12 @@ function isExerciseCompound(exName) {
   return res;
 }
 
+function safeSortDate(a, b, desc = true) {
+  const dA = a && a.date ? a.date : '';
+  const dB = b && b.date ? b.date : '';
+  return desc ? dB.localeCompare(dA) : dA.localeCompare(dB);
+}
+
 function checkLastTrainingPerformance(exName) {
   const p = STORE.activeProfile;
   const prof = getProfileData();
@@ -3316,7 +3322,7 @@ function checkLastTrainingPerformance(exName) {
   
   const relevantSessions = Object.values(prof.sessions)
     .filter(s => s.wk === targetWk)
-    .sort((a,b) => b.date.localeCompare(a.date));
+    .sort((a,b) => safeSortDate(a, b, true));
     
   if (relevantSessions.length === 0) return false;
   
@@ -3429,7 +3435,7 @@ function checkPlateauPerformance(wk, ei, requiredSets) {
   // Get last 2 sessions
   const sessions = Object.values(prof.sessions)
     .filter(s => s.wk === wk)
-    .sort((a,b) => b.date.localeCompare(a.date));
+    .sort((a,b) => safeSortDate(a, b, true));
     
   if (sessions.length < 2) return false;
   
@@ -3630,7 +3636,7 @@ function getLastSession(wk, beforeDateStr) {
   if (!prof) return null;
   const sessions = Object.values(prof.sessions)
     .filter(s => s.wk === wk && s.date < beforeDateStr)
-    .sort((a,b) => b.date.localeCompare(a.date));
+    .sort((a,b) => safeSortDate(a, b, true));
   return sessions[0] || null;
 }
 
@@ -3936,7 +3942,7 @@ function getExHistory(wk, ei, maxSessions = 8) {
   if (!prof) return [];
   return Object.values(prof.sessions)
     .filter(s => s.wk === wk && s.sets && s.sets[ei] && s.sets[ei].some(x => x && parseFloat(x.kg) > 0))
-    .sort((a,b) => a.date.localeCompare(b.date))
+    .sort((a,b) => safeSortDate(a, b, false))
     .slice(-maxSessions)
     .map(s => {
       const sets = (s.sets[ei] || []).filter(x => x && parseFloat(x.kg) > 0);
@@ -4331,7 +4337,7 @@ function addMetric() {
   // Remove duplicate entry for today
   prof.metrics = prof.metrics.filter(m => m.date !== todayStr());
   prof.metrics.push(entry);
-  prof.metrics.sort((a,b) => a.date.localeCompare(b.date));
+  prof.metrics.sort((a,b) => safeSortDate(a, b, false));
   
   saveStore();
   renderMetricsTab();
@@ -4443,7 +4449,7 @@ function getFilteredSessions() {
   const prof = getProfileData();
   if (!prof) return [];
   
-  const sessions = Object.values(prof.sessions).sort((a,b) => b.date.localeCompare(a.date));
+  const sessions = Object.values(prof.sessions).sort((a,b) => safeSortDate(a, b, true));
   if (activeHistoryFilter === 'all') return sessions;
   
   const now = new Date();
@@ -4659,7 +4665,7 @@ function importDB(input) {
 function exportHistoryText() {
   const prof = getProfileData();
   if (!prof) return;
-  const sessions = Object.values(prof.sessions).sort((a,b) => b.date.localeCompare(a.date));
+  const sessions = Object.values(prof.sessions).sort((a,b) => safeSortDate(a, b, true));
   if (sessions.length === 0) {
     toast('No hay sesiones para exportar', 'warn');
     return;
