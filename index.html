@@ -9,6 +9,7 @@
 <meta name="theme-color" content="#0c0c0c">
 <meta name="description" content="Gym Tracker — Sistema Inteligente de Entrenamiento Unificado">
 <title>Gym Tracker</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💪</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- Dynamic Manifest will be injected by JS -->
 <link id="manifest-link" rel="manifest" href="manifest_tato.json">
@@ -297,9 +298,94 @@ button {
   border-bottom-color: var(--accent);
 }
 
+.nav-tabs {
+  display: none !important;
+}
+
+/* Bottom Navigation Bar */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  height: 64px;
+  background: rgba(21, 21, 21, 0.95);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 1000;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.bottom-nav-btn {
+  background: none;
+  border: none;
+  color: var(--text3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 100%;
+  cursor: pointer;
+  transition: color 0.2s;
+  padding: 4px 0;
+}
+
+.bottom-nav-btn.active {
+  color: var(--accent);
+}
+
+.bottom-nav-icon {
+  font-size: 20px;
+  margin-bottom: 2px;
+}
+
+.bottom-nav-lbl {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* Selector bars inside tabs */
+.rutina-selector-bar, .evolucion-selector-bar {
+  display: flex;
+  background: var(--card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 4px;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.rutina-sel-btn, .evolucion-sel-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text2);
+  padding: 8px 6px;
+  border-radius: var(--radius-sm);
+  font-family: var(--body);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  text-align: center;
+}
+
+.rutina-sel-btn.active, .evolucion-sel-btn.active {
+  background: var(--card2);
+  color: var(--accent);
+  border: 1px solid var(--border2);
+}
+
 /* ═══════════════════════════════════════════════════
    CONTENT
-═══════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════ */
 .content {
   padding: 12px 12px 100px;
 }
@@ -818,7 +904,7 @@ button {
 /* SETS TRACKER */
 .sets-col-hdr {
   display: grid;
-  grid-template-columns: 26px 1fr 1fr 28px;
+  grid-template-columns: 20px 2.2fr 2fr 1.3fr 28px;
   gap: 4px;
   margin-bottom: 4px;
 }
@@ -833,10 +919,70 @@ button {
 
 .set-row {
   display: grid;
-  grid-template-columns: 26px 1fr 1fr 28px;
+  grid-template-columns: 20px 2.2fr 2fr 1.3fr 28px;
   gap: 4px;
   margin-bottom: 4px;
   align-items: center;
+}
+
+.adj-group {
+  display: flex;
+  align-items: center;
+  background: var(--card2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  height: 27px;
+}
+
+.adj-group .set-inp {
+  border: none !important;
+  background: none !important;
+  flex: 1;
+  padding: 6px 2px;
+  min-width: 0;
+  font-size: 11.5px;
+  height: 100%;
+}
+
+.adj-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: none;
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: bold;
+  width: 20px;
+  height: 27px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s, color 0.15s;
+}
+
+.adj-btn:active {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+}
+
+.set-rpe {
+  background: var(--card2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  color: var(--text2);
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 5px 2px;
+  text-align: center;
+  outline: none;
+  cursor: pointer;
+  width: 100%;
+  height: 27px;
+}
+
+.set-rpe:focus {
+  border-color: var(--accent);
 }
 
 .set-num {
@@ -2153,6 +2299,7 @@ input[type=range]::-moz-range-thumb {
   <div class="content" id="appContent">
     <!-- Active panel gets injected here -->
   </div>
+  <div class="bottom-nav" id="bottomNavContainer"></div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════
@@ -2679,17 +2826,38 @@ const TABS_CONFIG = {
   tato: {
     title: 'PPL · 7 DÍAS',
     sub: 'Tato · Push/Pull/Legs/Arms',
-    tabs: ['semana', 'push', 'pull', 'legs', 'arms', 'cfrun', 'ciclos', 'metricas', 'hist']
+    tabs: ['semana', 'rutina', 'evolucion', 'hist']
   },
   emilia: {
     title: 'TRAINING EMILIA',
     sub: 'Emilia · Recomposición Glúteos/Fuerza',
-    tabs: ['semana', 'glut', 'quad', 'upper', 'cardio', 'ciclos', 'metricas', 'hist']
+    tabs: ['semana', 'rutina', 'evolucion', 'hist']
   }
 };
 
 let currentTabsList = [];
 let currentTab = 'semana';
+let currentActiveWorkout = null;
+let currentEvolucionSection = 'ciclos';
+
+function selectWorkoutFromSemana(wk) {
+  currentActiveWorkout = wk;
+  const pnl = document.getElementById('tab-rutina');
+  if (pnl) renderRutinaTab(pnl);
+  showTab('rutina');
+}
+
+function changeActiveWorkout(wk) {
+  currentActiveWorkout = wk;
+  const pnl = document.getElementById('tab-rutina');
+  if (pnl) renderRutinaTab(pnl);
+}
+
+function changeEvolucionSection(section) {
+  currentEvolucionSection = section;
+  const pnl = document.getElementById('tab-evolucion');
+  if (pnl) renderEvolucionTab(pnl);
+}
 
 function setupAppUI() {
   const p = STORE.activeProfile;
@@ -2699,13 +2867,34 @@ function setupAppUI() {
   document.getElementById('appHeaderTitle').textContent = config.title;
   document.getElementById('appHeaderSub').textContent = config.sub;
   
-  // Render tabs bar
-  const navContainer = document.getElementById('navTabsContainer');
   currentTabsList = config.tabs;
-  navContainer.innerHTML = currentTabsList.map(tab => {
-    const lbl = tab === 'cfrun' ? 'CF+RUN' : tab === 'metricas' ? 'MÉTRICAS' : tab === 'hist' ? 'HISTORIAL' : tab === 'glut' ? 'GLÚT A' : tab === 'quad' ? 'CUÁD B' : tab.toUpperCase();
-    return `<button class="tab-btn" id="tbtn-${tab}" onclick="showTab('${tab}')">${lbl}</button>`;
-  }).join('');
+  
+  // Render bottom nav bar
+  const bottomNavContainer = document.getElementById('bottomNavContainer');
+  if (bottomNavContainer) {
+    const tabIcons = {
+      semana: '📅',
+      rutina: '🏋️',
+      evolucion: '📈',
+      hist: '📜'
+    };
+    const tabLabels = {
+      semana: 'Semana',
+      rutina: 'Rutina',
+      evolucion: 'Evolución',
+      hist: 'Historial'
+    };
+    bottomNavContainer.innerHTML = currentTabsList.map(tab => {
+      const icon = tabIcons[tab] || '⭐';
+      const label = tabLabels[tab] || tab.toUpperCase();
+      return `
+        <button class="bottom-nav-btn" id="bbtn-${tab}" onclick="showTab('${tab}')">
+          <span class="bottom-nav-icon">${icon}</span>
+          <span class="bottom-nav-lbl">${label}</span>
+        </button>
+      `;
+    }).join('');
+  }
   
   // Set Cervical Slider display in Checkin
   document.getElementById('cervicalSliderGroup').style.display = p === 'emilia' ? 'block' : 'none';
@@ -2716,7 +2905,7 @@ function setupAppUI() {
 ============================================================ */
 function showTab(name) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
   
   const panel = document.getElementById('tab-' + name);
   if (panel) {
@@ -2726,31 +2915,23 @@ function showTab(name) {
     renderDynamicTabPanel(name);
   }
   
-  const btn = document.getElementById('tbtn-' + name);
+  const btn = document.getElementById('bbtn-' + name);
   if (btn) btn.classList.add('active');
   
   window.scrollTo(0,0);
   currentTab = name;
   
-  const wkTabs = ['push', 'pull', 'legs', 'arms', 'glut', 'quad', 'upper'];
-  if (wkTabs.includes(name)) {
-    initTransientState(name);
-    loadSessionIntoUI(name);
-    // Auto show checkin modal if not shown today
-    const sess = getSession(name);
-    if (sess && !sess.checkinShown) {
-      setTimeout(() => showCheckinModal(name), 600);
-      sess.checkinShown = true;
-      saveStore();
-    }
-    updateAICoach(name);
-    restoreChatHistory(name);
+  if (name === 'semana') {
+    renderSemanaTab();
+  } else if (name === 'rutina') {
+    const pnl = document.getElementById('tab-rutina');
+    if (pnl) renderRutinaTab(pnl);
+  } else if (name === 'evolucion') {
+    const pnl = document.getElementById('tab-evolucion');
+    if (pnl) renderEvolucionTab(pnl);
+  } else if (name === 'hist') {
+    renderHistoryTab();
   }
-  
-  if (name === 'semana') renderSemanaTab();
-  if (name === 'ciclos') renderCiclosTab();
-  if (name === 'metricas') renderMetricsTab();
-  if (name === 'hist') renderHistoryTab();
 }
 
 function initSwipe() {
@@ -2789,18 +2970,104 @@ function renderDynamicTabPanel(name) {
   
   if (name === 'semana') {
     // Render Semana UI
+  } else if (name === 'rutina') {
+    renderRutinaTab(el);
+  } else if (name === 'evolucion') {
+    renderEvolucionTab(el);
   } else if (name === 'push' || name === 'pull' || name === 'legs' || name === 'arms' || name === 'glut' || name === 'quad' || name === 'upper') {
     renderWorkoutTab(name, el);
   } else if (name === 'cfrun') {
     renderCfRunTab(el);
   } else if (name === 'cardio') {
     renderCardioTab(el);
-  } else if (name === 'ciclos') {
-    // Dynamic cycles
-  } else if (name === 'metricas') {
-    // Metrics
-  } else if (name === 'hist') {
-    // History
+  }
+}
+
+function renderRutinaTab(container) {
+  const p = STORE.activeProfile;
+  const workouts = p === 'tato' 
+    ? ['push', 'pull', 'legs', 'arms', 'cfrun'] 
+    : ['glut', 'quad', 'upper', 'cardio'];
+
+  if (!currentActiveWorkout) {
+    // Auto-detect suggest based on day of week
+    const today = new Date().getDay(); // 0 = Sun, 1 = Mon, etc.
+    let suggested = '';
+    if (p === 'tato') {
+      if (today === 1) suggested = 'push';
+      else if (today === 2 || today === 4) suggested = 'cfrun';
+      else if (today === 3) suggested = 'pull';
+      else if (today === 5) suggested = 'legs';
+      else if (today === 6) suggested = 'arms';
+      else suggested = 'cfrun';
+    } else {
+      if (today === 2) suggested = 'glut';
+      else if (today === 3) suggested = 'upper';
+      else if (today === 5) suggested = 'quad';
+      else if (today === 4 || today === 6 || today === 0) suggested = 'cardio';
+      else suggested = '';
+    }
+    currentActiveWorkout = suggested || workouts[0];
+  }
+
+  const labels = {
+    push: 'Push', pull: 'Pull', legs: 'Legs', arms: 'Arms', cfrun: 'CF+Run',
+    glut: 'Glút A', quad: 'Cuád B', upper: 'Upper', cardio: 'Cardio'
+  };
+
+  const selectorButtons = workouts.map(wk => {
+    const activeClass = currentActiveWorkout === wk ? 'active' : '';
+    const label = labels[wk] || wk.toUpperCase();
+    return `<button class="rutina-sel-btn ${activeClass}" onclick="changeActiveWorkout('${wk}')">${label}</button>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="rutina-selector-bar">
+      ${selectorButtons}
+    </div>
+    <div id="rutina-workout-container" style="margin-top: 15px;"></div>
+  `;
+
+  const subContainer = document.getElementById('rutina-workout-container');
+  if (!subContainer) return;
+
+  if (currentActiveWorkout === 'cfrun') {
+    renderCfRunTab(subContainer);
+  } else if (currentActiveWorkout === 'cardio') {
+    renderCardioTab(subContainer);
+  } else {
+    renderWorkoutTab(currentActiveWorkout, subContainer);
+    initTransientState(currentActiveWorkout);
+    loadSessionIntoUI(currentActiveWorkout);
+    
+    // Check if check-in modal is needed
+    const sess = getSession(currentActiveWorkout);
+    if (sess && !sess.checkinShown) {
+      setTimeout(() => showCheckinModal(currentActiveWorkout), 600);
+      sess.checkinShown = true;
+      saveStore();
+    }
+    updateAICoach(currentActiveWorkout);
+    restoreChatHistory(currentActiveWorkout);
+  }
+}
+
+function renderEvolucionTab(container) {
+  container.innerHTML = `
+    <div class="evolucion-selector-bar">
+      <button class="evolucion-sel-btn ${currentEvolucionSection === 'ciclos' ? 'active' : ''}" onclick="changeEvolucionSection('ciclos')">Periodización</button>
+      <button class="evolucion-sel-btn ${currentEvolucionSection === 'metricas' ? 'active' : ''}" onclick="changeEvolucionSection('metricas')">Métricas</button>
+    </div>
+    <div id="evolucion-content-container" style="margin-top: 15px;"></div>
+  `;
+
+  const subContainer = document.getElementById('evolucion-content-container');
+  if (!subContainer) return;
+
+  if (currentEvolucionSection === 'ciclos') {
+    renderCiclosTab();
+  } else {
+    renderMetricsTab();
   }
 }
 
@@ -2952,25 +3219,25 @@ function renderSemanaTab() {
   if (isTato) {
     gridHTML = `
       <div class="week-grid">
-        <div class="day-block push" onclick="showTab('push')">
+        <div class="day-block push" onclick="selectWorkoutFromSemana('push')">
           <div class="day-lbl">Lun</div><div class="day-icon">🏋️</div><div class="day-tag">PUSH<br>Pecho</div>
         </div>
-        <div class="day-block cf" onclick="showTab('cfrun')">
+        <div class="day-block cf" onclick="selectWorkoutFromSemana('cfrun')">
           <div class="day-lbl">Mar</div><div class="day-icon">🔥</div><div class="day-tag">CROSS<br>FIT</div>
         </div>
-        <div class="day-block pull" onclick="showTab('pull')">
+        <div class="day-block pull" onclick="selectWorkoutFromSemana('pull')">
           <div class="day-lbl">Mié</div><div class="day-icon">🏋️</div><div class="day-tag">PULL<br>Espalda</div>
         </div>
-        <div class="day-block cf" onclick="showTab('cfrun')">
+        <div class="day-block cf" onclick="selectWorkoutFromSemana('cfrun')">
           <div class="day-lbl">Jue</div><div class="day-icon">🔥</div><div class="day-tag">CROSS<br>FIT</div>
         </div>
-        <div class="day-block legs" onclick="showTab('legs')">
+        <div class="day-block legs" onclick="selectWorkoutFromSemana('legs')">
           <div class="day-lbl">Vie</div><div class="day-icon">🏋️</div><div class="day-tag">LEGS<br>Core</div>
         </div>
-        <div class="day-block arms" onclick="showTab('arms')">
+        <div class="day-block arms" onclick="selectWorkoutFromSemana('arms')">
           <div class="day-lbl">Sáb</div><div class="day-icon">💪</div><div class="day-tag">ARMS<br>Hombro</div>
         </div>
-        <div class="day-block run" onclick="showTab('cfrun')">
+        <div class="day-block run" onclick="selectWorkoutFromSemana('cfrun')">
           <div class="day-lbl">Dom</div><div class="day-icon">🏃</div><div class="day-tag">RUN<br>Zona 2</div>
         </div>
       </div>
@@ -2986,22 +3253,22 @@ function renderSemanaTab() {
   } else {
     gridHTML = `
       <div class="week-grid">
-        <div class="day-block push" onclick="showTab('glut')">
+        <div class="day-block push" onclick="selectWorkoutFromSemana('glut')">
           <div class="day-lbl">Mar</div><div class="day-icon">🍑</div><div class="day-tag">GLÚT A</div>
         </div>
-        <div class="day-block legs" onclick="showTab('upper')">
+        <div class="day-block legs" onclick="selectWorkoutFromSemana('upper')">
           <div class="day-lbl">Mié</div><div class="day-icon">👚</div><div class="day-tag">UPPER</div>
         </div>
-        <div class="day-block cardio" onclick="showTab('cardio')">
+        <div class="day-block cardio" onclick="selectWorkoutFromSemana('cardio')">
           <div class="day-lbl">Jue</div><div class="day-icon">🧘</div><div class="day-tag">PILATES</div>
         </div>
-        <div class="day-block pull" onclick="showTab('quad')">
+        <div class="day-block pull" onclick="selectWorkoutFromSemana('quad')">
           <div class="day-lbl">Vie</div><div class="day-icon">🦵</div><div class="day-tag">CUÁD B</div>
         </div>
-        <div class="day-block cf" onclick="showTab('cardio')">
+        <div class="day-block cf" onclick="selectWorkoutFromSemana('cardio')">
           <div class="day-lbl">Sáb</div><div class="day-icon">🔥</div><div class="day-tag">CARDIO</div>
         </div>
-        <div class="day-block run" onclick="showTab('cardio')">
+        <div class="day-block run" onclick="selectWorkoutFromSemana('cardio')">
           <div class="day-lbl">Dom</div><div class="day-icon">🏃</div><div class="day-tag">RUN Z2</div>
         </div>
         <div class="day-block" style="background:rgba(255,255,255,0.05); border: 1px solid var(--border)">
@@ -3192,7 +3459,7 @@ function getActiveCycle() {
 }
 
 function renderCiclosTab() {
-  const container = document.getElementById('tab-ciclos');
+  const container = document.getElementById('evolucion-content-container') || document.getElementById('tab-ciclos');
   if (!container) return;
   
   const prof = getProfileData();
@@ -4305,7 +4572,7 @@ function renderCheckinStrip(wk) {
 let activeMetricPlot = 'weight';
 
 function renderMetricsTab() {
-  const container = document.getElementById('tab-metricas');
+  const container = document.getElementById('evolucion-content-container') || document.getElementById('tab-metricas');
   if (!container) return;
   
   const isTato = STORE.activeProfile === 'tato';
