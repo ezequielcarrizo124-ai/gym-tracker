@@ -2860,7 +2860,7 @@ function renderWorkoutTab(wk, container) {
           <div style="font-size:11px; font-weight:600; color:var(--accent); margin-bottom:8px; display:flex; align-items:center; gap:4px">
             <span>💬</span> CHAT CIENTÍFICO INTERACTIVO
           </div>
-          <div class="coach-chat-messages" id="chat-messages-${wk}" style="max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; margin-bottom:10px; padding-right:4px; font-size:11px">
+          <div class="coach-chat-messages" id="chat-messages-${wk}" style="max-height:320px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; margin-bottom:10px; padding-right:4px; font-size:11px">
             <div style="color:var(--text3); font-style:italic; text-align:center; padding:10px 0">El chat mantiene el contexto de tu rutina de hoy, check-in e historial. Pregúntame lo que quieras.</div>
           </div>
           <div style="display:flex; gap:6px">
@@ -5036,7 +5036,7 @@ async function sendChatMessage(wk) {
         },
         generationConfig: {
           temperature: 0.5,
-          maxOutputTokens: 500
+          maxOutputTokens: 1200
         }
       })
     });
@@ -5074,10 +5074,25 @@ function appendChatMsg(container, text, sender) {
   let html = text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
-    .replace(/\*(.*?)\*/g, '<i>$1</i>')
-    .replace(/\n/g, '<br>');
+    .replace(/>/g, "&gt;");
+    
+  // Parsea negritas y cursivas
+  html = html.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+  html = html.replace(/\*(.*?)\*/g, '<i>$1</i>');
+  
+  // Parsea listas desordenadas
+  html = html.replace(/^(?:-|\*)\s+(.*?)$/gm, '<li>$1</li>');
+  html = html.replace(/(<li>.*?<\/li>)/gs, '<ul>$1</ul>');
+  html = html.replace(/<\/ul>\s*<ul>/g, '');
+
+  // Parsea títulos simples
+  html = html.replace(/^### (.*?)$/gm, '<h3 style="margin:8px 0 4px 0; font-size:12px; color:var(--accent)">$1</h3>');
+  html = html.replace(/^## (.*?)$/gm, '<h4 style="margin:8px 0 4px 0; font-size:12px; color:var(--accent)">$1</h4>');
+  
+  // Parsea saltos de línea (que no estén en listas)
+  html = html.replace(/\n/g, '<br>');
+  html = html.replace(/<br>\s*<(ul|li|h3|h4)/g, '<$1');
+  html = html.replace(/<\/(ul|li|h3|h4)>\s*<br>/g, '</$1>');
     
   msgEl.innerHTML = html;
   container.appendChild(msgEl);
@@ -5148,10 +5163,12 @@ HISTORIAL DE LA SESIÓN ANTERIOR (LOG REAL):
 
 ---
 INSTRUCCIONES DE RESPUESTA:
-1. Responde de forma muy concisa, clara y directa. Máximo 2 párrafos o 3 bullets breves por respuesta. Los entrenadores no leen textos gigantes en el gimnasio.
-2. Si te preguntan por alternativas de ejercicio, justifícalas biomecánicamente en base a la base de datos de la app.
-3. Si el usuario reporta dolor (ej: cervical en Emilia, lumbar en RDL, hombro en banca), dale una pauta kinesiologica de seguridad de inmediato: bajar la carga, corregir postura (cuello neutro o retracción escapular) o sugerir cambiar el ejercicio por su alternativa biomecánica de la app.
-4. Fundamenta siempre con tono profesional pero cercano y motivador. No uses introducciones repetitivas.`;
+1. Responde como una Inteligencia Artificial avanzada, de forma conversacional, detallada, instructiva y completa. Explaya tus explicaciones anatómicas, de fisiología muscular y biomecánica cuando sea relevante para fundamentar tus consejos. 
+2. No te limites en la longitud; es preferible una explicación profunda, estructurada y clara a una respuesta vaga o demasiado corta. Usa párrafos bien desarrollados y formato estructurado (negritas, viñetas).
+3. Si te preguntan por alternativas de ejercicio, justifícalas biomecánicamente en base a la base de datos de la app.
+4. Si el usuario reporta dolor (ej: cervical en Emilia, lumbar en RDL, hombro en banca), dale una pauta kinesiologica de seguridad de inmediato: bajar la carga, corregir postura (cuello neutro o retracción escapular) o sugerir cambiar el ejercicio por su alternativa biomecánica de la app.
+5. Puedes hablar y dar pautas fundamentadas sobre nutrición (superávit, déficit, requerimientos de proteínas, hidratación), descanso, suplementación basada en evidencia (creatina, cafeína) y periodización para complementar la rutina.
+6. Fundamenta siempre con tono profesional, empático, motivador y sumamente riguroso basado en estudios científicos modernos.`;
 
   return prompt;
 }
